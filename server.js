@@ -169,18 +169,53 @@ const getCustomerById = async (req, res) => {
 const updateCustomer = async (req, res) => {
   const customerId = req.params.customerId;
   const newEmail = req.body.email;
+  const newAddress = req.body.address;
+  const newCity = req.body.city;
+  const newPostcode = req.body.postcode;
+  const newCountry = req.body.country;
 
   if (newEmail.length <= 0) {
-    return res.status(400).send("The new email shouldn't be empty");
+    return res.status(400).send("The email field shouldn't be empty");
   }
 
   pool
-    .query("UPDATE customers SET email=$1 WHERE id=$2", [newEmail, customerId])
+    .query(
+      "UPDATE customers SET email=$1 address=$2 city=$3 postcode=$4 country=$5 WHERE id=$6",
+      [newEmail, newAddress, newCity, newPostcode, newCountry, customerId]
+    )
     .then(() => res.send(`Customer ${customerId} updated!`))
     .catch((e) => console.error(e));
 };
+const deleteCustomer = async (req, res) => {
+  const customerId = req.params.customerId;
 
-// Finish Exercise 3 (missing parts) and Ex 4
+  pool
+    .query("DELETE FROM bookings WHERE customer_id=$1", [customerId])
+    .then(() => {
+      pool
+        .query("DELETE FROM customers WHERE id=$1", [customerId])
+        .then(() => res.send(`Customer ${customerId} deleted!`))
+        .catch((e) => console.error(e));
+    })
+    .catch((e) => console.error(e));
+};
+
+const deleteHotel = async (req, res) => {
+  const hotelId = req.params.hotelId;
+
+  pool
+    .query("DELETE FROM bookings WHERE hotel_id=$1", [hotelId])
+    .then(() => {
+      pool
+        .query("DELETE FROM hotels WHERE id=$1", [hotelId])
+        .then(() => res.send(`Hotel ${hotelId} deleted!`))
+        .catch((e) => console.error(e));
+    })
+    .catch((e) => console.error(e));
+};
+// Finish and Ex 4
+app.delete("/hotels/:hotelId", deleteHotel);
+app.delete("/customers/:customerId", deleteCustomer);
 app.patch("/customers/:customerId", updateCustomer);
 app.get("/customers/:customerId/bookings", getCustomerBookings);
 app.get("/customers/:customerId", getCustomerById);
